@@ -13,8 +13,8 @@
    <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f9fafb; /* gray-50 */
-      color: #111827; /* gray-900 */
+      background-color: #0f0f0f; /* Darker background */
+      color: #e0e0e0; /* Lighter text */
     }
 
     /* --- Slider Styles (Accent color remains) --- */
@@ -30,7 +30,7 @@
       width: 100%;
       height: 4px;
       cursor: pointer;
-      background: #d1d5db; /* gray-300 */
+      background: #333; /* Darker track */
       border-radius: 99px;
     }
     input[type=range]::-webkit-slider-thumb {
@@ -52,7 +52,7 @@
       width: 100%;
       height: 4px;
       cursor: pointer;
-      background: #d1d5db; /* gray-300 */
+      background: #333; /* Darker track */
       border-radius: 99px;
     }
     input[type=range]::-moz-range-thumb {
@@ -66,8 +66,8 @@
 
     /* Active playlist item */
     .playlist-active {
-      background-color: #ecfdf5; /* emerald-50 */
-      color: #065f46; /* emerald-800 */
+      background-color: #064e3b; /* Darker emerald */
+      color: #10b981; /* emerald-500 */
       font-weight: 600;
     }
     
@@ -82,16 +82,127 @@
 
     /* Drag/Drop Overlay */
     .drop-overlay {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(0, 0, 0, 0.8);
       border: 4px dashed #10b981;
-      color: #111827; /* gray-900 */
+      color: #e0e0e0; /* Lighter text */
     }
 
     /* Custom scrollbar */
     #playlist::-webkit-scrollbar { width: 8px; }
-    #playlist::-webkit-scrollbar-track { background: #f3f4f6; /* gray-100 */ }
-    #playlist::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; /* gray-300 */ }
-    #playlist::-webkit-scrollbar-thumb:hover { background: #9ca3af; /* gray-400 */ }
+    #playlist::-webkit-scrollbar-track { background: #1a1a1a; /* Darker track */ }
+    #playlist::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; /* Darker thumb */ }
+    #playlist::-webkit-scrollbar-thumb:hover { background: #555; /* Lighter on hover */ }
+    
+    /* Equalizer styles */
+    .eq-slider {
+      writing-mode: bt-lr; /* IE */
+      -webkit-appearance: slider-vertical; /* WebKit */
+      width: 30px;
+      height: 100px;
+    }
+    
+    /* Tab styles */
+    .tab-active {
+      border-bottom: 2px solid #10b981;
+      color: #10b981;
+    }
+    
+    /* Notification styles */
+    .notification {
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    
+    /* Theme transition */
+    body, * {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    /* Light theme */
+    body.light-theme {
+      background-color: #f9fafb;
+      color: #111827;
+    }
+    
+    body.light-theme .bg-black {
+      background-color: #fff !important;
+    }
+    
+    body.light-theme .bg-gray-900 {
+      background-color: #f3f4f6 !important;
+    }
+    
+    body.light-theme .text-white {
+      color: #111827 !important;
+    }
+    
+    body.light-theme .text-gray-400 {
+      color: #6b7280 !important;
+    }
+    
+    body.light-theme .bg-gray-800 {
+      background-color: #e5e7eb !important;
+    }
+    
+    body.light-theme .border-gray-700 {
+      border-color: #d1d5db !important;
+    }
+    
+    body.light-theme input[type=range]::-webkit-slider-runnable-track {
+      background: #d1d5db;
+    }
+    
+    body.light-theme #playlist::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+    
+    body.light-theme #playlist::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+    }
+    
+    body.light-theme #playlist::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+    
+    /* Lyrics display */
+    .lyrics-line {
+      transition: all 0.3s ease;
+    }
+    
+    .lyrics-current {
+      font-size: 1.2rem;
+      color: #10b981;
+      font-weight: 600;
+    }
+    
+    /* Progress bar with buffered sections */
+    .progress-container {
+      position: relative;
+    }
+    
+    .progress-buffered {
+      position: absolute;
+      height: 4px;
+      background-color: #444;
+      border-radius: 99px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+    
+    .progress-played {
+      position: absolute;
+      height: 4px;
+      background-color: #10b981;
+      border-radius: 99px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
   </style>
 </head>
 <body class="text-gray-200">
@@ -101,42 +212,102 @@
     <div class="flex-1 flex overflow-hidden">
       
       <aside class="w-full md:w-1/3 lg:w-96 flex flex-col p-6 bg-black overflow-y-auto">
-        <div class="flex items-center mb-6">
-          <i class="ri-pulse-line text-3xl text-emerald-400 mr-2"></i>
-          <h2 class="text-2xl font-bold text-white">Aura Player</h2>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <label class="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-2 rounded-xl shadow-lg transition transform hover:scale-105 text-center text-sm flex items-center justify-center gap-1">
-            <i class="ri-folder-open-line"></i> Add Folder
-            <input type="file" id="fileInput" accept="audio/*" class="hidden" webkitdirectory directory multiple>
-          </label>
-          <button id="clearPlaylistBtn" class="bg-gray-700 hover:bg-red-600 text-white font-semibold py-3 px-2 rounded-xl shadow-lg transition transform hover:scale-105 text-sm flex items-center justify-center gap-1">
-            <i class="ri-delete-bin-line"></i> Clear Playlist
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center">
+            <i class="ri-pulse-line text-3xl text-emerald-400 mr-2"></i>
+            <h2 class="text-2xl font-bold text-white">Aura Player</h2>
+          </div>
+          <button id="themeToggle" class="p-2 text-gray-400 hover:text-white transition-colors" title="Toggle Theme">
+            <i class="ri-sun-line text-xl"></i>
           </button>
         </div>
 
-        <div class="mb-4">
-          <input type="text" id="searchBar" placeholder="Search song, artist..." class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-200">
+        <div class="flex border-b border-gray-700 mb-4">
+          <button class="tab-btn px-4 py-2 text-sm font-medium tab-active" data-tab="playlist">Playlist</button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-400" data-tab="queue">Queue</button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-400" data-tab="recent">Recent</button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-400" data-tab="favorites">Favorites</button>
         </div>
 
-        <div class="mb-4">
-          <label for="sortOptions" class="block text-sm font-medium text-gray-400 mb-1">Sort by:</label>
-          <select id="sortOptions" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <option value="name">Song Name</option>
-            <option value="date" selected>Date Added</option>
-            <option value="size">File Size</option>
-            <option value="artist">Artist</option>
-          </select>
-        </div>
+        <div id="playlistTab" class="tab-content">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <label class="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-2 rounded-xl shadow-lg transition transform hover:scale-105 text-center text-sm flex items-center justify-center gap-1">
+              <i class="ri-folder-open-line"></i> Add Folder
+              <input type="file" id="fileInput" accept="audio/*" class="hidden" webkitdirectory directory multiple>
+            </label>
+            <button id="clearPlaylistBtn" class="bg-gray-700 hover:bg-red-600 text-white font-semibold py-3 px-2 rounded-xl shadow-lg transition transform hover:scale-105 text-sm flex items-center justify-center gap-1">
+              <i class="ri-delete-bin-line"></i> Clear Playlist
+            </button>
+          </div>
 
-        <ul id="playlist" class="space-y-2 text-sm flex-1 overflow-y-auto -mr-3 pr-3">
-          <li class="italic text-gray-500 text-center py-4">No songs added yet. Drag files here!</li>
-        </ul>
+          <div class="mb-4">
+            <input type="text" id="searchBar" placeholder="Search song, artist, album..." class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-200">
+          </div>
+
+          <div class="mb-4 flex gap-2">
+            <div class="flex-1">
+              <label for="sortOptions" class="block text-sm font-medium text-gray-400 mb-1">Sort by:</label>
+              <select id="sortOptions" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="name">Song Name</option>
+                <option value="date" selected>Date Added</option>
+                <option value="size">File Size</option>
+                <option value="artist">Artist</option>
+                <option value="album">Album</option>
+                <option value="duration">Duration</option>
+                <option value="plays">Play Count</option>
+              </select>
+            </div>
+            <div class="flex-1">
+              <label for="filterGenre" class="block text-sm font-medium text-gray-400 mb-1">Filter by Genre:</label>
+              <select id="filterGenre" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="all">All Genres</option>
+                <option value="rock">Rock</option>
+                <option value="pop">Pop</option>
+                <option value="electronic">Electronic</option>
+                <option value="classical">Classical</option>
+                <option value="jazz">Jazz</option>
+                <option value="hiphop">Hip Hop</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <ul id="playlist" class="space-y-2 text-sm flex-1 overflow-y-auto -mr-3 pr-3">
+            <li class="italic text-gray-500 text-center py-4">No songs added yet. Drag files here!</li>
+          </ul>
+        </div>
+        
+        <div id="queueTab" class="tab-content hidden">
+          <div class="mb-4 flex justify-between items-center">
+            <h3 class="text-lg font-semibold">Up Next</h3>
+            <button id="clearQueueBtn" class="text-sm text-gray-400 hover:text-white">Clear Queue</button>
+          </div>
+          <ul id="queue" class="space-y-2 text-sm flex-1 overflow-y-auto -mr-3 pr-3">
+            <li class="italic text-gray-500 text-center py-4">Queue is empty</li>
+          </ul>
+        </div>
+        
+        <div id="recentTab" class="tab-content hidden">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold">Recently Played</h3>
+          </div>
+          <ul id="recent" class="space-y-2 text-sm flex-1 overflow-y-auto -mr-3 pr-3">
+            <li class="italic text-gray-500 text-center py-4">No recent songs</li>
+          </ul>
+        </div>
+        
+        <div id="favoritesTab" class="tab-content hidden">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold">Favorite Songs</h3>
+          </div>
+          <ul id="favorites" class="space-y-2 text-sm flex-1 overflow-y-auto -mr-3 pr-3">
+            <li class="italic text-gray-500 text-center py-4">No favorite songs</li>
+          </ul>
+        </div>
       </aside>
 
       <main class="flex-1 hidden md:flex flex-col items-center justify-center p-6 md:p-8 text-center relative bg-gray-900 overflow-y-auto">
-        <div class="flex flex-col items-center text-gray-600">
+        <div id="mainContent" class="flex flex-col items-center text-gray-600">
           <i class="ri-pulse-line text-9xl"></i>
           <h1 class="text-4xl font-bold mt-4">Welcome to Aura</h1>
           <p class="text-xl mt-2">Add some music to get started.</p>
@@ -144,6 +315,13 @@
             This is your main content area. In the future, this could show artist bios, lyrics, or a "home" screen.
             For now, your playlist is on the left and the player is at the bottom.
           </p>
+        </div>
+        
+        <div id="lyricsContainer" class="hidden flex-col items-center justify-center text-center w-full max-w-2xl px-4">
+          <h2 class="text-2xl font-bold mb-4 text-white">Lyrics</h2>
+          <div id="lyricsContent" class="text-gray-300 max-h-96 overflow-y-auto w-full text-center">
+            <p class="lyrics-line">No lyrics available for this song.</p>
+          </div>
         </div>
       </main>
     </div>
@@ -161,6 +339,9 @@
           <h1 id="songName" class="text-sm font-semibold text-white truncate">No song selected</h1>
           <p class="text-xs text-gray-400 truncate" id="artistName">Add some music!</p>
         </div>
+        <button id="favoriteBtn" class="p-1 text-gray-400 hover:text-red-500 transition-colors" title="Add to Favorites">
+          <i class="ri-heart-line text-xl"></i>
+        </button>
       </div>
 
       <div class="flex-1 flex flex-col items-center justify-center max-w-xl">
@@ -181,15 +362,22 @@
             <i id="repeatIcon" class="ri-repeat-line text-xl"></i>
           </button>
         </div>
-        <div class="flex items-center gap-2 w-full mt-1">
+        <div class="flex items-center gap-2 w-full mt-1 progress-container">
           <span id="currentTime" class="text-xs text-gray-400 font-mono">0:00</span>
-          <input type="range" id="progressBar" value="0" class="w-full h-1 appearance-none cursor-pointer">
+          <div class="flex-1 relative">
+            <div class="progress-buffered" style="width: 0%"></div>
+            <div class="progress-played" style="width: 0%"></div>
+            <input type="range" id="progressBar" value="0" class="w-full h-1 appearance-none cursor-pointer relative z-3">
+          </div>
           <span id="totalTime" class="text-xs text-gray-400 font-mono">0:00</span>
         </div>
       </div>
       
       <div class="flex items-center justify-end gap-3 w-1/3">
         <button id="playbackSpeedBtn" class="text-sm font-mono w-10 text-center text-gray-400 hover:text-white" title="Playback Speed">1x</button>
+        <button id="crossfadeBtn" class="p-1 text-gray-400 hover:text-white" title="Crossfade">
+          <i class="ri-skip-forward-mini-line text-xl"></i>
+        </button>
         <div class="hidden md:flex items-center gap-2 w-full max-w-[120px]">
           <i class="ri-volume-down-line text-lg text-gray-400"></i>
           <input type="range" id="volumeControl" min="0" max="100" value="100" class="w-full h-1 appearance-none cursor-pointer">
@@ -221,9 +409,100 @@
       </div>
 
       <h1 id="nowPlayingSongName" class="text-3xl font-bold mb-2 text-white truncate max-w-full">No song selected</h1>
-      <p class="text-gray-400 font-medium text-lg mb-8" id="nowPlayingArtistName">Add some music!</p>
+      <p class="text-gray-400 font-medium text-lg mb-2" id="nowPlayingArtistName">Add some music!</p>
+      <p class="text-gray-500 text-sm mb-8" id="nowPlayingAlbumName">Album</p>
 
-      <canvas id="visualizer" width="300" height="60" class="mb-8"></canvas>
+      <div class="flex items-center gap-2 mb-4">
+        <button id="showLyricsBtn" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Lyrics</button>
+        <button id="showEqualizerBtn" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Equalizer</button>
+        <button id="showVisualizerBtn" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Visualizer</button>
+        <button id="showInfoBtn" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Info</button>
+      </div>
+
+      <div id="visualizerContainer" class="w-full max-w-md mb-8">
+        <canvas id="visualizer" width="300" height="60" class="w-full"></canvas>
+      </div>
+      
+      <div id="equalizerContainer" class="hidden w-full max-w-md mb-8">
+        <div class="flex justify-around items-end h-32">
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="60">
+            <span class="text-xs text-gray-400 mt-2">60Hz</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="170">
+            <span class="text-xs text-gray-400 mt-2">170Hz</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="350">
+            <span class="text-xs text-gray-400 mt-2">350Hz</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="1000">
+            <span class="text-xs text-gray-400 mt-2">1kHz</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="3500">
+            <span class="text-xs text-gray-400 mt-2">3.5kHz</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <input type="range" class="eq-slider" min="-12" max="12" value="0" data-freq="10000">
+            <span class="text-xs text-gray-400 mt-2">10kHz</span>
+          </div>
+        </div>
+        <div class="flex justify-center gap-2 mt-4">
+          <button id="eqPresetFlat" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Flat</button>
+          <button id="eqPresetRock" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Rock</button>
+          <button id="eqPresetPop" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Pop</button>
+          <button id="eqPresetJazz" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Jazz</button>
+          <button id="eqPresetClassical" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">Classical</button>
+        </div>
+      </div>
+      
+      <div id="infoContainer" class="hidden w-full max-w-md mb-8 bg-gray-800 rounded-lg p-4">
+        <div class="grid grid-cols-2 gap-4 text-left">
+          <div>
+            <p class="text-xs text-gray-400">Title</p>
+            <p id="infoTitle" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Artist</p>
+            <p id="infoArtist" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Album</p>
+            <p id="infoAlbum" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Year</p>
+            <p id="infoYear" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Genre</p>
+            <p id="infoGenre" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Track</p>
+            <p id="infoTrack" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Bitrate</p>
+            <p id="infoBitrate" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">File Size</p>
+            <p id="infoSize" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Play Count</p>
+            <p id="infoPlayCount" class="text-sm text-white">-</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">Last Played</p>
+            <p id="infoLastPlayed" class="text-sm text-white">-</p>
+          </div>
+        </div>
+      </div>
 
       <div class="w-full max-w-md mb-4">
         <input type="range" id="nowPlayingProgressBar" value="0" class="w-full h-1 appearance-none cursor-pointer">
@@ -250,6 +529,25 @@
           <i id="nowPlayingRepeatIcon" class="ri-repeat-line text-2xl"></i>
         </button>
       </div>
+      
+      <div class="flex items-center gap-4 mt-6">
+        <div class="flex items-center gap-2">
+          <button id="sleepTimerBtn" class="p-2 text-gray-400 hover:text-white" title="Sleep Timer">
+            <i class="ri-timer-line text-xl"></i>
+          </button>
+          <span id="sleepTimerDisplay" class="text-xs text-gray-400 hidden">Off</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="audioEffectsBtn" class="p-2 text-gray-400 hover:text-white" title="Audio Effects">
+            <i class="ri-equalizer-line text-xl"></i>
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="gaplessBtn" class="p-2 text-gray-400 hover:text-white" title="Gapless Playback">
+            <i class="ri-seamless-line text-xl"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -258,6 +556,29 @@
       <i class="ri-upload-cloud-2-line text-8xl text-emerald-400 animate-pulse"></i>
       <h2 class="text-3xl font-bold text-white mt-4">Drop files to play</h2>
       <p class="text-lg text-gray-300">Drop audio files or folders anywhere</p>
+    </div>
+  </div>
+
+  <div id="notificationContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <!-- Notifications will be added here -->
+  </div>
+
+  <div id="sleepTimerModal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center hidden">
+    <div class="bg-gray-800 rounded-lg p-6 w-80">
+      <h3 class="text-xl font-semibold mb-4 text-white">Sleep Timer</h3>
+      <p class="text-gray-300 mb-4">Stop playback after:</p>
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="5">5 minutes</button>
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="10">10 minutes</button>
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="15">15 minutes</button>
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="30">30 minutes</button>
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="45">45 minutes</button>
+        <button class="sleep-timer-option px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white" data-minutes="60">60 minutes</button>
+      </div>
+      <div class="flex justify-between">
+        <button id="sleepTimerCancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white">Cancel</button>
+        <button id="sleepTimerOff" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white">Turn Off</button>
+      </div>
     </div>
   </div>
 
@@ -273,8 +594,19 @@
     const audioPlayer = document.getElementById("audioPlayer");
     const playlistEl = document.getElementById("playlist");
     const sortOptionsEl = document.getElementById("sortOptions");
+    const filterGenreEl = document.getElementById("filterGenre");
     const dragDropOverlay = document.getElementById("dragDropOverlay");
     const volumeControl = document.getElementById("volumeControl");
+    const themeToggle = document.getElementById("themeToggle");
+    const notificationContainer = document.getElementById("notificationContainer");
+
+    // Tab Elements
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const queueEl = document.getElementById("queue");
+    const recentEl = document.getElementById("recent");
+    const favoritesEl = document.getElementById("favorites");
+    const clearQueueBtn = document.getElementById("clearQueueBtn");
 
     // Mini-Player Elements
     const miniPlayer = document.getElementById("miniPlayer");
@@ -284,6 +616,8 @@
     const albumArtEl = document.getElementById("albumArt");
     const defaultAlbumArtEl = document.getElementById("defaultAlbumArt");
     const progressBar = document.getElementById("progressBar");
+    const progressBuffered = document.querySelector('.progress-buffered');
+    const progressPlayed = document.querySelector('.progress-played');
     const currentTimeEl = document.getElementById("currentTime");
     const totalTimeEl = document.getElementById("totalTime");
     const mainControlBtn = document.getElementById("mainControlBtn");
@@ -291,12 +625,14 @@
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
     const expandBtn = document.getElementById("expandBtn");
+    const favoriteBtn = document.getElementById("favoriteBtn");
 
     // New Feature Buttons (Mini-Player)
     const shuffleBtn = document.getElementById("shuffleBtn");
     const repeatBtn = document.getElementById("repeatBtn");
     const repeatIcon = document.getElementById("repeatIcon");
     const playbackSpeedBtn = document.getElementById("playbackSpeedBtn");
+    const crossfadeBtn = document.getElementById("crossfadeBtn");
 
     // "Now Playing" View Elements
     const nowPlayingView = document.getElementById("nowPlayingView");
@@ -305,6 +641,7 @@
     const nowPlayingDefaultArt = document.getElementById("nowPlayingDefaultArt");
     const nowPlayingSongName = document.getElementById("nowPlayingSongName");
     const nowPlayingArtistName = document.getElementById("nowPlayingArtistName");
+    const nowPlayingAlbumName = document.getElementById("nowPlayingAlbumName");
     const nowPlayingProgressBar = document.getElementById("nowPlayingProgressBar");
     const nowPlayingCurrentTime = document.getElementById("nowPlayingCurrentTime");
     const nowPlayingTotalTime = document.getElementById("nowPlayingTotalTime");
@@ -317,24 +654,79 @@
     const nowPlayingShuffleBtn = document.getElementById("nowPlayingShuffleBtn");
     const nowPlayingRepeatBtn = document.getElementById("nowPlayingRepeatBtn");
     const nowPlayingRepeatIcon = document.getElementById("nowPlayingRepeatIcon");
+    const showLyricsBtn = document.getElementById("showLyricsBtn");
+    const showEqualizerBtn = document.getElementById("showEqualizerBtn");
+    const showVisualizerBtn = document.getElementById("showVisualizerBtn");
+    const showInfoBtn = document.getElementById("showInfoBtn");
+    const sleepTimerBtn = document.getElementById("sleepTimerBtn");
+    const audioEffectsBtn = document.getElementById("audioEffectsBtn");
+    const gaplessBtn = document.getElementById("gaplessBtn");
+
+    // View Containers
+    const visualizerContainer = document.getElementById("visualizerContainer");
+    const equalizerContainer = document.getElementById("equalizerContainer");
+    const infoContainer = document.getElementById("infoContainer");
+    const lyricsContainer = document.getElementById("lyricsContainer");
+    const mainContent = document.getElementById("mainContent");
+    const lyricsContent = document.getElementById("lyricsContent");
 
     // Visualizer Elements
     const canvas = document.getElementById("visualizer");
     const canvasCtx = canvas.getContext("2d");
 
+    // Equalizer Elements
+    const eqSliders = document.querySelectorAll('.eq-slider');
+    const eqPresetFlat = document.getElementById('eqPresetFlat');
+    const eqPresetRock = document.getElementById('eqPresetRock');
+    const eqPresetPop = document.getElementById('eqPresetPop');
+    const eqPresetJazz = document.getElementById('eqPresetJazz');
+    const eqPresetClassical = document.getElementById('eqPresetClassical');
+
+    // Info Elements
+    const infoTitle = document.getElementById('infoTitle');
+    const infoArtist = document.getElementById('infoArtist');
+    const infoAlbum = document.getElementById('infoAlbum');
+    const infoYear = document.getElementById('infoYear');
+    const infoGenre = document.getElementById('infoGenre');
+    const infoTrack = document.getElementById('infoTrack');
+    const infoBitrate = document.getElementById('infoBitrate');
+    const infoSize = document.getElementById('infoSize');
+    const infoPlayCount = document.getElementById('infoPlayCount');
+    const infoLastPlayed = document.getElementById('infoLastPlayed');
+
+    // Sleep Timer Elements
+    const sleepTimerModal = document.getElementById('sleepTimerModal');
+    const sleepTimerOptions = document.querySelectorAll('.sleep-timer-option');
+    const sleepTimerCancel = document.getElementById('sleepTimerCancel');
+    const sleepTimerOff = document.getElementById('sleepTimerOff');
+    const sleepTimerDisplay = document.getElementById('sleepTimerDisplay');
+
     // === State ===
-    let songs = []; // Array of song objects { file, title, artist, album, artUrl, duration, durationStr }
+    let songs = []; // Array of song objects { file, title, artist, album, artUrl, duration, durationStr, playCount, lastPlayed, favorite, genre, year, track }
     let filteredSongs = [];
+    let queue = [];
+    let recentSongs = [];
+    let favoriteSongs = [];
     let currentIndex = 0;
     let isPlaying = false;
     let isShuffled = false;
     let repeatMode = 'none'; // 'none', 'all', 'one'
-    const playbackRates = [1, 1.25, 1.5, 2, 0.75];
-    let currentRateIndex = 0;
+    const playbackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+    let currentRateIndex = 2; // Start at 1x
+    let isCrossfadeEnabled = false;
+    let isGaplessEnabled = false;
+    let isDarkTheme = true;
+    let sleepTimer = null;
+    let sleepTimerMinutes = 0;
 
     // Visualizer State
     let audioContext, analyser, sourceNode, dataArray, bufferLength;
     let isVisualizerSetup = false;
+    let visualizerType = 'bars'; // 'bars', 'wave', 'circle'
+
+    // Equalizer State
+    let filters = [];
+    let isEqEnabled = false;
 
     // === Helper Functions ===
     const formatTime = (seconds) => {
@@ -342,6 +734,20 @@
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    };
+
+    const formatFileSize = (bytes) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const formatDate = (date) => {
+      if (!date) return 'Never';
+      const d = new Date(date);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     };
 
     const cleanSongName = (name) => {
@@ -355,9 +761,58 @@
       return cleanName.replace(/\.[^/.]+$/, ""); // Remove file extension
     };
 
+    const showNotification = (message, type = 'info') => {
+      const notification = document.createElement('div');
+      notification.className = `notification px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+        type === 'error' ? 'bg-red-600' : 
+        type === 'success' ? 'bg-green-600' : 
+        type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+      } text-white`;
+      
+      const icon = document.createElement('i');
+      icon.className = `ri-${
+        type === 'error' ? 'error-warning' : 
+        type === 'success' ? 'checkbox-circle' : 
+        type === 'warning' ? 'alert' : 'information'
+      }-line text-xl`;
+      
+      const text = document.createElement('span');
+      text.textContent = message;
+      
+      notification.appendChild(icon);
+      notification.appendChild(text);
+      notificationContainer.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    };
+
     // --- Modal Toggle ---
     const openNowPlaying = () => nowPlayingView.classList.remove('translate-y-full');
     const closeNowPlaying = () => nowPlayingView.classList.add('translate-y-full');
+
+    // --- Tab Management ---
+    const switchTab = (tabName) => {
+      tabBtns.forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.add('tab-active');
+          btn.classList.remove('text-gray-400');
+        } else {
+          btn.classList.remove('tab-active');
+          btn.classList.add('text-gray-400');
+        }
+      });
+      
+      tabContents.forEach(content => {
+        if (content.id === `${tabName}Tab`) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+    };
 
     // === Visualizer Logic ===
     const setupVisualizer = () => {
@@ -367,10 +822,16 @@
             analyser = audioContext.createAnalyser();
             sourceNode = audioContext.createMediaElementSource(audioPlayer);
             
-            sourceNode.connect(analyser);
-            analyser.connect(audioContext.destination);
+            // Setup equalizer if enabled
+            if (isEqEnabled) {
+              setupEqualizerNodes();
+              connectEqualizerNodes();
+            } else {
+              sourceNode.connect(analyser);
+              analyser.connect(audioContext.destination);
+            }
             
-            analyser.fftSize = 128;
+            analyser.fftSize = 256;
             bufferLength = analyser.frequencyBinCount;
             dataArray = new Uint8Array(bufferLength);
             isVisualizerSetup = true;
@@ -378,6 +839,40 @@
         } catch (e) {
             console.error("Web Audio API not supported or failed to init.", e);
         }
+    };
+
+    const setupEqualizerNodes = () => {
+      // Create filters for equalizer
+      const frequencies = [60, 170, 350, 1000, 3500, 10000];
+      
+      frequencies.forEach((freq, i) => {
+        const filter = audioContext.createBiquadFilter();
+        
+        if (i === 0) {
+          filter.type = 'lowshelf';
+        } else if (i === frequencies.length - 1) {
+          filter.type = 'highshelf';
+        } else {
+          filter.type = 'peaking';
+        }
+        
+        filter.frequency.value = freq;
+        filter.Q.value = 1;
+        filter.gain.value = 0;
+        
+        filters.push(filter);
+      });
+    };
+
+    const connectEqualizerNodes = () => {
+      sourceNode.connect(filters[0]);
+      
+      for (let i = 0; i < filters.length - 1; i++) {
+        filters[i].connect(filters[i + 1]);
+      }
+      
+      filters[filters.length - 1].connect(analyser);
+      analyser.connect(audioContext.destination);
     };
 
     const drawVisualizer = () => {
@@ -394,22 +889,86 @@
         
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const barWidth = (canvas.width / bufferLength) * 1.5;
-        let barHeight;
-        let x = 0;
-        
-        for(let i = 0; i < bufferLength; i++) {
-            barHeight = dataArray[i] / 2.5; // Scale height
-            
-            const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
-            gradient.addColorStop(0, '#10b981'); // emerald-500
-            gradient.addColorStop(1, '#34d399'); // emerald-400
-            
-            canvasCtx.fillStyle = gradient;
-            canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-            
-            x += barWidth + 2; // Add spacing
+        if (visualizerType === 'bars') {
+          drawBarsVisualizer();
+        } else if (visualizerType === 'wave') {
+          drawWaveVisualizer();
+        } else if (visualizerType === 'circle') {
+          drawCircleVisualizer();
         }
+    };
+
+    const drawBarsVisualizer = () => {
+      const barWidth = (canvas.width / bufferLength) * 1.5;
+      let barHeight;
+      let x = 0;
+      
+      for(let i = 0; i < bufferLength; i++) {
+          barHeight = dataArray[i] / 2.5; // Scale height
+          
+          const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+          gradient.addColorStop(0, '#10b981'); // emerald-500
+          gradient.addColorStop(1, '#34d399'); // emerald-400
+          
+          canvasCtx.fillStyle = gradient;
+          canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+          
+          x += barWidth + 2; // Add spacing
+      }
+    };
+
+    const drawWaveVisualizer = () => {
+      analyser.getByteTimeDomainData(dataArray);
+      
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = '#10b981';
+      canvasCtx.beginPath();
+      
+      const sliceWidth = canvas.width / bufferLength;
+      let x = 0;
+      
+      for(let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        
+        if(i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+      }
+      
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    };
+
+    const drawCircleVisualizer = () => {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 20;
+      
+      for(let i = 0; i < bufferLength; i++) {
+        const angle = (i / bufferLength) * Math.PI * 2;
+        const barHeight = (dataArray[i] / 255) * radius;
+        
+        const x1 = centerX + Math.cos(angle) * radius;
+        const y1 = centerY + Math.sin(angle) * radius;
+        const x2 = centerX + Math.cos(angle) * (radius - barHeight);
+        const y2 = centerY + Math.sin(angle) * (radius - barHeight);
+        
+        const gradient = canvasCtx.createLinearGradient(x1, y1, x2, y2);
+        gradient.addColorStop(0, '#10b981');
+        gradient.addColorStop(1, '#34d399');
+        
+        canvasCtx.strokeStyle = gradient;
+        canvasCtx.lineWidth = 2;
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(x1, y1);
+        canvasCtx.lineTo(x2, y2);
+        canvasCtx.stroke();
+      }
     };
 
     // === Core Logic ===
@@ -429,7 +988,14 @@
           duration: 0,
           durationStr: "...",
           dateAdded: file.lastModified,
-          size: file.size
+          size: file.size,
+          playCount: 0,
+          lastPlayed: null,
+          favorite: false,
+          genre: "Other",
+          year: null,
+          track: null,
+          bitrate: null
         };
 
         const audio = new Audio(URL.createObjectURL(file));
@@ -447,6 +1013,10 @@
                   song.title = tags.title || song.title;
                   song.artist = tags.artist || song.artist;
                   song.album = tags.album || song.album;
+                  song.year = tags.year || null;
+                  song.track = tags.track || null;
+                  song.genre = tags.genre || "Other";
+                  
                   if (tags.v2 && tags.v2.image) {
                     const image = tags.v2.image;
                     const blob = new Blob([image.data], { type: image.mime });
@@ -480,6 +1050,7 @@
           loadSong(currentIndex);
         }
         updatePlaylistUI();
+        showNotification(`Added ${newSongs.length} song(s) to playlist`, 'success');
       }
     };
 
@@ -487,6 +1058,13 @@
       const song = filteredSongs[index];
       if (!song) return;
 
+      // Update play count and last played
+      song.playCount = (song.playCount || 0) + 1;
+      song.lastPlayed = new Date().toISOString();
+      
+      // Add to recent songs
+      addToRecent(song);
+      
       // Revoke *previous* album art URLs
       if (albumArtEl.src.startsWith('blob:')) URL.revokeObjectURL(albumArtEl.src);
       if (nowPlayingAlbumArt.src.startsWith('blob:')) URL.revokeObjectURL(nowPlayingAlbumArt.src);
@@ -501,6 +1079,16 @@
       // Update "Now Playing" View
       nowPlayingSongName.textContent = song.title;
       nowPlayingArtistName.textContent = song.artist === "Unknown Artist" ? song.album : `${song.artist} - ${song.album}`;
+      nowPlayingAlbumName.textContent = song.album;
+      
+      // Update favorite button
+      updateFavoriteButton(song.favorite);
+      
+      // Update info panel
+      updateInfoPanel(song);
+      
+      // Update lyrics
+      updateLyrics(song);
 
       if (song.artUrl) {
         albumArtEl.src = song.artUrl;
@@ -579,10 +1167,16 @@
         li.innerHTML = `
           <div class="flex items-center justify-between">
             <div class="truncate pr-4">
-              <div class="truncate text-base font-medium">${song.title}</div>
+              <div class="truncate text-base font-medium flex items-center gap-2">
+                ${song.favorite ? '<i class="ri-heart-fill text-red-500"></i>' : ''}
+                ${song.title}
+              </div>
               <div class="text-sm text-gray-400 truncate">${song.artist}</div>
             </div>
-            <span class="text-sm text-gray-400 font-mono flex-shrink-0">${song.durationStr}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500">${song.genre}</span>
+              <span class="text-sm text-gray-400 font-mono flex-shrink-0">${song.durationStr}</span>
+            </div>
           </div>
         `;
         li.className = `cursor-pointer p-3 rounded-lg border border-transparent transition-all duration-200 truncate hover:bg-gray-800/60`;
@@ -596,6 +1190,143 @@
       updatePlaylistUIActiveState();
     };
     
+    const updateQueueUI = () => {
+      queueEl.innerHTML = "";
+      if (queue.length === 0) {
+        queueEl.innerHTML = `<li class="italic text-gray-500 text-center py-10 text-lg">Queue is empty</li>`;
+        return;
+      }
+      
+      queue.forEach((song, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="truncate pr-4">
+              <div class="truncate text-base font-medium">${song.title}</div>
+              <div class="text-sm text-gray-400 truncate">${song.artist}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="remove-from-queue p-1 text-gray-400 hover:text-red-500" data-index="${i}">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        li.className = `cursor-pointer p-3 rounded-lg border border-transparent transition-all duration-200 truncate hover:bg-gray-800/60`;
+        queueEl.appendChild(li);
+      });
+      
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.remove-from-queue').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = parseInt(btn.dataset.index);
+          queue.splice(index, 1);
+          updateQueueUI();
+        });
+      });
+    };
+    
+    const updateRecentUI = () => {
+      recentEl.innerHTML = "";
+      if (recentSongs.length === 0) {
+        recentEl.innerHTML = `<li class="italic text-gray-500 text-center py-10 text-lg">No recent songs</li>`;
+        return;
+      }
+      
+      recentSongs.forEach((song, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="truncate pr-4">
+              <div class="truncate text-base font-medium">${song.title}</div>
+              <div class="text-sm text-gray-400 truncate">${song.artist}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500">${formatDate(song.lastPlayed)}</span>
+            </div>
+          </div>
+        `;
+        li.className = `cursor-pointer p-3 rounded-lg border border-transparent transition-all duration-200 truncate hover:bg-gray-800/60`;
+        li.onclick = () => {
+          // Find the song in the main playlist
+          const index = filteredSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
+          if (index !== -1) {
+            currentIndex = index;
+            loadSong(currentIndex);
+          }
+        };
+        recentEl.appendChild(li);
+      });
+    };
+    
+    const updateFavoritesUI = () => {
+      favoritesEl.innerHTML = "";
+      if (favoriteSongs.length === 0) {
+        favoritesEl.innerHTML = `<li class="italic text-gray-500 text-center py-10 text-lg">No favorite songs</li>`;
+        return;
+      }
+      
+      favoriteSongs.forEach((song, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="truncate pr-4">
+              <div class="truncate text-base font-medium">${song.title}</div>
+              <div class="text-sm text-gray-400 truncate">${song.artist}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="remove-favorite p-1 text-red-500 hover:text-red-400" data-index="${i}">
+                <i class="ri-heart-fill"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        li.className = `cursor-pointer p-3 rounded-lg border border-transparent transition-all duration-200 truncate hover:bg-gray-800/60`;
+        li.onclick = (e) => {
+          // Don't trigger if clicking on the remove button
+          if (e.target.closest('.remove-favorite')) return;
+          
+          // Find the song in the main playlist
+          const index = filteredSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
+          if (index !== -1) {
+            currentIndex = index;
+            loadSong(currentIndex);
+          }
+        };
+        favoritesEl.appendChild(li);
+      });
+      
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.remove-favorite').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = parseInt(btn.dataset.index);
+          const song = favoriteSongs[index];
+          
+          // Remove from favorites
+          song.favorite = false;
+          favoriteSongs.splice(index, 1);
+          
+          // Update the song in the main playlist
+          const mainIndex = songs.findIndex(s => s.title === song.title && s.artist === song.artist);
+          if (mainIndex !== -1) {
+            songs[mainIndex].favorite = false;
+          }
+          
+          updateFavoritesUI();
+          updatePlaylistUI();
+          
+          // Update favorite button if this is the current song
+          if (filteredSongs[currentIndex] && filteredSongs[currentIndex].title === song.title && filteredSongs[currentIndex].artist === song.artist) {
+            updateFavoriteButton(false);
+          }
+          
+          showNotification(`Removed "${song.title}" from favorites`, 'info');
+        });
+      });
+    };
+    
     const sortPlaylist = () => {
       const sortBy = sortOptionsEl.value;
       songs.sort((a, b) => {
@@ -604,6 +1335,9 @@
           case 'date': return b.dateAdded - a.dateAdded;
           case 'size': return a.size - b.size;
           case 'artist': return a.artist.localeCompare(b.artist);
+          case 'album': return a.album.localeCompare(b.album);
+          case 'duration': return a.duration - b.duration;
+          case 'plays': return (b.playCount || 0) - (a.playCount || 0);
           default: return 0;
         }
       });
@@ -612,11 +1346,18 @@
 
     const filterPlaylist = () => {
       const query = searchBar.value.toLowerCase();
-      filteredSongs = songs.filter(song => 
-        song.title.toLowerCase().includes(query) ||
-        song.artist.toLowerCase().includes(query) ||
-        song.album.toLowerCase().includes(query)
-      );
+      const genre = filterGenreEl.value;
+      
+      filteredSongs = songs.filter(song => {
+        const matchesQuery = song.title.toLowerCase().includes(query) ||
+                            song.artist.toLowerCase().includes(query) ||
+                            song.album.toLowerCase().includes(query);
+        
+        const matchesGenre = genre === 'all' || song.genre === genre;
+        
+        return matchesQuery && matchesGenre;
+      });
+      
       updatePlaylistUI();
     };
 
@@ -626,6 +1367,7 @@
         });
         songs = [];
         filteredSongs = [];
+        queue = [];
         currentIndex = 0;
         isPlaying = false;
         
@@ -654,9 +1396,97 @@
         
         updateMainControlIcon();
         updatePlaylistUI();
+        updateQueueUI();
+        showNotification("Playlist cleared", 'info');
     };
     
     // --- New Feature Logic ---
+    
+    const addToQueue = (song) => {
+      queue.push(song);
+      updateQueueUI();
+      showNotification(`Added "${song.title}" to queue`, 'success');
+    };
+    
+    const addToRecent = (song) => {
+      // Remove if already in recent
+      const existingIndex = recentSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
+      if (existingIndex !== -1) {
+        recentSongs.splice(existingIndex, 1);
+      }
+      
+      // Add to beginning
+      recentSongs.unshift({...song});
+      
+      // Keep only the 20 most recent
+      if (recentSongs.length > 20) {
+        recentSongs = recentSongs.slice(0, 20);
+      }
+      
+      updateRecentUI();
+    };
+    
+    const toggleFavorite = () => {
+      if (filteredSongs.length === 0) return;
+      
+      const song = filteredSongs[currentIndex];
+      song.favorite = !song.favorite;
+      
+      // Update in main songs array
+      const mainIndex = songs.findIndex(s => s.title === song.title && s.artist === song.artist);
+      if (mainIndex !== -1) {
+        songs[mainIndex].favorite = song.favorite;
+      }
+      
+      // Update favorites array
+      if (song.favorite) {
+        favoriteSongs.push({...song});
+        showNotification(`Added "${song.title}" to favorites`, 'success');
+      } else {
+        const favIndex = favoriteSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
+        if (favIndex !== -1) {
+          favoriteSongs.splice(favIndex, 1);
+        }
+        showNotification(`Removed "${song.title}" from favorites`, 'info');
+      }
+      
+      updateFavoriteButton(song.favorite);
+      updatePlaylistUI();
+      updateFavoritesUI();
+    };
+    
+    const updateFavoriteButton = (isFavorite) => {
+      const icon = favoriteBtn.querySelector('i');
+      if (isFavorite) {
+        icon.classList.remove('ri-heart-line');
+        icon.classList.add('ri-heart-fill', 'text-red-500');
+      } else {
+        icon.classList.remove('ri-heart-fill', 'text-red-500');
+        icon.classList.add('ri-heart-line');
+      }
+    };
+    
+    const updateInfoPanel = (song) => {
+      infoTitle.textContent = song.title;
+      infoArtist.textContent = song.artist;
+      infoAlbum.textContent = song.album;
+      infoYear.textContent = song.year || '-';
+      infoGenre.textContent = song.genre;
+      infoTrack.textContent = song.track || '-';
+      infoBitrate.textContent = song.bitrate ? `${song.bitrate} kbps` : '-';
+      infoSize.textContent = formatFileSize(song.size);
+      infoPlayCount.textContent = song.playCount || 0;
+      infoLastPlayed.textContent = formatDate(song.lastPlayed);
+    };
+    
+    const updateLyrics = (song) => {
+      // In a real implementation, you would fetch lyrics from an API
+      // For now, we'll just show a placeholder
+      lyricsContent.innerHTML = `
+        <p class="lyrics-line">No lyrics available for this song.</p>
+        <p class="text-gray-500 mt-4 text-sm">In a future version, lyrics would be fetched from a service like LyricFind or Genius.</p>
+      `;
+    };
     
     const playRandom = () => {
         if (filteredSongs.length <= 1) return;
@@ -670,6 +1500,21 @@
 
     const playNext = () => {
       if (filteredSongs.length === 0) return;
+      
+      // Check if there's a song in the queue
+      if (queue.length > 0) {
+        const nextSong = queue.shift();
+        updateQueueUI();
+        
+        // Find the song in the main playlist
+        const index = filteredSongs.findIndex(s => s.title === nextSong.title && s.artist === nextSong.artist);
+        if (index !== -1) {
+          currentIndex = index;
+          loadSong(currentIndex);
+          return;
+        }
+      }
+      
       if (isShuffled) {
         playRandom();
       } else {
@@ -693,6 +1538,7 @@
         const color = isShuffled ? 'text-emerald-400' : 'text-gray-400';
         shuffleBtn.classList.toggle('text-emerald-400', isShuffled);
         nowPlayingShuffleBtn.classList.toggle('text-emerald-400', isShuffled);
+        showNotification(`Shuffle ${isShuffled ? 'enabled' : 'disabled'}`, 'info');
     };
 
     const toggleRepeat = () => {
@@ -702,18 +1548,21 @@
             repeatIcon.classList.add('ri-repeat-2-fill', 'text-emerald-400');
             nowPlayingRepeatIcon.classList.remove('ri-repeat-line');
             nowPlayingRepeatIcon.classList.add('ri-repeat-2-fill', 'text-emerald-400');
+            showNotification('Repeat all enabled', 'info');
         } else if (repeatMode === 'all') {
             repeatMode = 'one';
             repeatIcon.classList.remove('ri-repeat-2-fill');
             repeatIcon.classList.add('ri-repeat-one-fill');
             nowPlayingRepeatIcon.classList.remove('ri-repeat-2-fill');
             nowPlayingRepeatIcon.classList.add('ri-repeat-one-fill');
+            showNotification('Repeat one enabled', 'info');
         } else {
             repeatMode = 'none';
             repeatIcon.classList.remove('ri-repeat-one-fill', 'text-emerald-400');
             repeatIcon.classList.add('ri-repeat-line');
             nowPlayingRepeatIcon.classList.remove('ri-repeat-one-fill', 'text-emerald-400');
             nowPlayingRepeatIcon.classList.add('ri-repeat-line');
+            showNotification('Repeat disabled', 'info');
         }
     };
 
@@ -722,6 +1571,185 @@
         const newRate = playbackRates[currentRateIndex];
         audioPlayer.playbackRate = newRate;
         playbackSpeedBtn.textContent = `${newRate}x`;
+        showNotification(`Playback speed: ${newRate}x`, 'info');
+    };
+    
+    const toggleCrossfade = () => {
+      isCrossfadeEnabled = !isCrossfadeEnabled;
+      crossfadeBtn.classList.toggle('text-emerald-400', isCrossfadeEnabled);
+      showNotification(`Crossfade ${isCrossfadeEnabled ? 'enabled' : 'disabled'}`, 'info');
+      
+      // In a real implementation, you would implement crossfading between songs
+      // This is a complex feature that would require two audio elements and careful timing
+    };
+    
+    const toggleGapless = () => {
+      isGaplessEnabled = !isGaplessEnabled;
+      gaplessBtn.classList.toggle('text-emerald-400', isGaplessEnabled);
+      showNotification(`Gapless playback ${isGaplessEnabled ? 'enabled' : 'disabled'}`, 'info');
+      
+      // In a real implementation, you would implement gapless playback
+      // This requires preloading the next song and carefully timing the transition
+    };
+    
+    const toggleTheme = () => {
+      isDarkTheme = !isDarkTheme;
+      document.body.classList.toggle('light-theme', !isDarkTheme);
+      
+      const icon = themeToggle.querySelector('i');
+      if (isDarkTheme) {
+        icon.classList.remove('ri-sun-line');
+        icon.classList.add('ri-moon-line');
+      } else {
+        icon.classList.remove('ri-moon-line');
+        icon.classList.add('ri-sun-line');
+      }
+      
+      showNotification(`${isDarkTheme ? 'Dark' : 'Light'} theme enabled`, 'info');
+    };
+    
+    const showVisualizerType = () => {
+      visualizerContainer.classList.remove('hidden');
+      equalizerContainer.classList.add('hidden');
+      infoContainer.classList.add('hidden');
+      mainContent.classList.add('hidden');
+      lyricsContainer.classList.add('hidden');
+    };
+    
+    const showEqualizer = () => {
+      visualizerContainer.classList.add('hidden');
+      equalizerContainer.classList.remove('hidden');
+      infoContainer.classList.add('hidden');
+      mainContent.classList.add('hidden');
+      lyricsContainer.classList.add('hidden');
+      
+      // Initialize equalizer if not already done
+      if (!isEqEnabled) {
+        isEqEnabled = true;
+        if (isVisualizerSetup) {
+          // Reconnect audio nodes with equalizer
+          sourceNode.disconnect();
+          analyser.disconnect();
+          audioContext.destination.disconnect();
+          
+          setupEqualizerNodes();
+          connectEqualizerNodes();
+        }
+      }
+    };
+    
+    const showInfo = () => {
+      visualizerContainer.classList.add('hidden');
+      equalizerContainer.classList.add('hidden');
+      infoContainer.classList.remove('hidden');
+      mainContent.classList.add('hidden');
+      lyricsContainer.classList.add('hidden');
+    };
+    
+    const showLyrics = () => {
+      visualizerContainer.classList.add('hidden');
+      equalizerContainer.classList.add('hidden');
+      infoContainer.classList.add('hidden');
+      mainContent.classList.add('hidden');
+      lyricsContainer.classList.remove('hidden');
+    };
+    
+    const cycleVisualizerType = () => {
+      if (visualizerType === 'bars') {
+        visualizerType = 'wave';
+      } else if (visualizerType === 'wave') {
+        visualizerType = 'circle';
+      } else {
+        visualizerType = 'bars';
+      }
+      
+      showNotification(`Visualizer: ${visualizerType}`, 'info');
+    };
+    
+    const setEqPreset = (preset) => {
+      const presets = {
+        flat: [0, 0, 0, 0, 0, 0],
+        rock: [5, 3, -1, 2, 4, 6],
+        pop: [-1, 2, 4, 4, 2, -1],
+        jazz: [3, 2, -1, 2, 4, 4],
+        classical: [4, 2, -1, 2, 4, 5]
+      };
+      
+      const values = presets[preset];
+      if (!values) return;
+      
+      eqSliders.forEach((slider, i) => {
+        slider.value = values[i];
+        if (filters[i]) {
+          filters[i].gain.value = values[i];
+        }
+      });
+      
+      showNotification(`Equalizer preset: ${preset}`, 'info');
+    };
+    
+    const setSleepTimer = (minutes) => {
+      // Clear any existing timer
+      if (sleepTimer) {
+        clearInterval(sleepTimer);
+      }
+      
+      sleepTimerMinutes = minutes;
+      let remainingMinutes = minutes;
+      
+      sleepTimerDisplay.textContent = `${remainingMinutes}m`;
+      sleepTimerDisplay.classList.remove('hidden');
+      
+      sleepTimer = setInterval(() => {
+        remainingMinutes--;
+        
+        if (remainingMinutes <= 0) {
+          // Timer expired
+          clearInterval(sleepTimer);
+          sleepTimer = null;
+          
+          // Pause playback
+          if (isPlaying) {
+            togglePlayPause();
+          }
+          
+          sleepTimerDisplay.textContent = 'Off';
+          showNotification('Sleep timer: Playback stopped', 'info');
+        } else {
+          sleepTimerDisplay.textContent = `${remainingMinutes}m`;
+        }
+      }, 60000); // Update every minute
+      
+      showNotification(`Sleep timer set for ${minutes} minutes`, 'success');
+      sleepTimerModal.classList.add('hidden');
+    };
+    
+    const cancelSleepTimer = () => {
+      if (sleepTimer) {
+        clearInterval(sleepTimer);
+        sleepTimer = null;
+      }
+      
+      sleepTimerMinutes = 0;
+      sleepTimerDisplay.textContent = 'Off';
+      sleepTimerDisplay.classList.add('hidden');
+      sleepTimerModal.classList.add('hidden');
+      
+      showNotification('Sleep timer cancelled', 'info');
+    };
+    
+    const turnOffSleepTimer = () => {
+      if (sleepTimer) {
+        clearInterval(sleepTimer);
+        sleepTimer = null;
+      }
+      
+      sleepTimerMinutes = 0;
+      sleepTimerDisplay.textContent = 'Off';
+      sleepTimerDisplay.classList.add('hidden');
+      sleepTimerModal.classList.add('hidden');
+      
+      showNotification('Sleep timer turned off', 'info');
     };
 
     // --- Drag and Drop ---
@@ -776,16 +1804,69 @@
     // --- Event Listeners ---
     fileInput.addEventListener("change", (e) => processFiles(e.target.files));
     clearPlaylistBtn.addEventListener("click", clearPlaylist);
+    clearQueueBtn.addEventListener("click", () => {
+      queue = [];
+      updateQueueUI();
+      showNotification("Queue cleared", 'info');
+    });
     searchBar.addEventListener("input", filterPlaylist);
     sortOptionsEl.addEventListener("change", sortPlaylist);
+    filterGenreEl.addEventListener("change", filterPlaylist);
     volumeControl.addEventListener("input", () => {
       audioPlayer.volume = volumeControl.value / 100;
+    });
+    themeToggle.addEventListener("click", toggleTheme);
+
+    // Tab Listeners
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(btn.dataset.tab);
+      });
     });
 
     // Modal Listeners
     expandBtn.addEventListener("click", openNowPlaying);
     miniPlayerExpand.addEventListener("click", openNowPlaying);
-    minimizeBtn.addEventListener("click", closeNowPlaying); // <-- THE FIX IS HERE
+    minimizeBtn.addEventListener("click", closeNowPlaying);
+
+    // View Toggle Listeners
+    showVisualizerBtn.addEventListener("click", showVisualizerType);
+    showEqualizerBtn.addEventListener("click", showEqualizer);
+    showInfoBtn.addEventListener("click", showInfo);
+    showLyricsBtn.addEventListener("click", showLyrics);
+    
+    // Visualizer type toggle
+    canvas.addEventListener("click", cycleVisualizerType);
+
+    // Equalizer Listeners
+    eqSliders.forEach((slider, i) => {
+      slider.addEventListener('input', () => {
+        if (filters[i]) {
+          filters[i].gain.value = slider.value;
+        }
+      });
+    });
+    
+    eqPresetFlat.addEventListener('click', () => setEqPreset('flat'));
+    eqPresetRock.addEventListener('click', () => setEqPreset('rock'));
+    eqPresetPop.addEventListener('click', () => setEqPreset('pop'));
+    eqPresetJazz.addEventListener('click', () => setEqPreset('jazz'));
+    eqPresetClassical.addEventListener('click', () => setEqPreset('classical'));
+
+    // Sleep Timer Listeners
+    sleepTimerBtn.addEventListener("click", () => {
+      sleepTimerModal.classList.remove('hidden');
+    });
+    
+    sleepTimerCancel.addEventListener("click", cancelSleepTimer);
+    sleepTimerOff.addEventListener("click", turnOffSleepTimer);
+    
+    sleepTimerOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const minutes = parseInt(option.dataset.minutes);
+        setSleepTimer(minutes);
+      });
+    });
 
     // Playback Listeners (syncing both players)
     [mainControlBtn, nowPlayingMainControlBtn].forEach(btn => btn.addEventListener("click", togglePlayPause));
@@ -794,6 +1875,10 @@
     [shuffleBtn, nowPlayingShuffleBtn].forEach(btn => btn.addEventListener("click", toggleShuffle));
     [repeatBtn, nowPlayingRepeatBtn].forEach(btn => btn.addEventListener("click", toggleRepeat));
     playbackSpeedBtn.addEventListener("click", cyclePlaybackSpeed);
+    crossfadeBtn.addEventListener("click", toggleCrossfade);
+    audioEffectsBtn.addEventListener("click", showEqualizer);
+    gaplessBtn.addEventListener("click", toggleGapless);
+    favoriteBtn.addEventListener("click", toggleFavorite);
 
     audioPlayer.addEventListener("play", () => {
       isPlaying = true;
@@ -808,6 +1893,7 @@
       const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100 || 0;
       progressBar.value = progress;
       nowPlayingProgressBar.value = progress;
+      progressPlayed.style.width = `${progress}%`;
       
       const currentTimeStr = formatTime(audioPlayer.currentTime);
       currentTimeEl.textContent = currentTimeStr;
@@ -816,6 +1902,21 @@
       const totalTimeStr = formatTime(audioPlayer.duration || 0);
       totalTimeEl.textContent = totalTimeStr;
       nowPlayingTotalTime.textContent = totalTimeStr;
+      
+      // Update lyrics highlight if available
+      if (lyricsContainer.classList.contains('hidden') === false) {
+        updateLyricsHighlight(audioPlayer.currentTime);
+      }
+    });
+    
+    audioPlayer.addEventListener("progress", () => {
+      if (audioPlayer.buffered.length > 0) {
+        const bufferedEnd = audioPlayer.buffered.end(audioPlayer.buffered.length - 1);
+        const duration = audioPlayer.duration;
+        if (duration > 0) {
+          progressBuffered.style.width = `${(bufferedEnd / duration) * 100}%`;
+        }
+      }
     });
     
     audioPlayer.addEventListener("ended", () => {
@@ -858,14 +1959,54 @@
         } else if (e.key === 'm') {
             // Toggle mute
             audioPlayer.muted = !audioPlayer.muted;
+            showNotification(audioPlayer.muted ? 'Muted' : 'Unmuted', 'info');
         } else if (e.key === 's') {
             e.preventDefault();
             toggleShuffle();
         } else if (e.key === 'r') {
             e.preventDefault();
             toggleRepeat();
+        } else if (e.key === 'f') {
+            e.preventDefault();
+            toggleFavorite();
+        } else if (e.key === 'l') {
+            e.preventDefault();
+            openNowPlaying();
+            showLyrics();
+        } else if (e.key === 'v') {
+            e.preventDefault();
+            openNowPlaying();
+            showVisualizerType();
+        } else if (e.key === 'e') {
+            e.preventDefault();
+            openNowPlaying();
+            showEqualizer();
+        } else if (e.key === 'i') {
+            e.preventDefault();
+            openNowPlaying();
+            showInfo();
+        } else if (e.key === 't') {
+            e.preventDefault();
+            toggleTheme();
+        } else if (e.key === '+' || e.key === '=') {
+            e.preventDefault();
+            volumeControl.value = Math.min(100, parseInt(volumeControl.value) + 5);
+            audioPlayer.volume = volumeControl.value / 100;
+            showNotification(`Volume: ${volumeControl.value}%`, 'info');
+        } else if (e.key === '-' || e.key === '_') {
+            e.preventDefault();
+            volumeControl.value = Math.max(0, parseInt(volumeControl.value) - 5);
+            audioPlayer.volume = volumeControl.value / 100;
+            showNotification(`Volume: ${volumeControl.value}%`, 'info');
         }
     });
+    
+    // Initialize
+    filteredSongs = [...songs];
+    updatePlaylistUI();
+    updateQueueUI();
+    updateRecentUI();
+    updateFavoritesUI();
   </script>
 </body>
 </html>
